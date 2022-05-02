@@ -22,7 +22,9 @@ goodRange = 0.16
 # delta < -160 : miss
 
 # 无效输入判定
-invalidRange = 0.4
+invalidRange = 0.24
+
+KEY_MAP = list("SDFJKL")
 
 TapImage = pygame.image.load("res\\TapImg.png")
 TapFailed = pygame.image.load("res\\TapFailed.png")
@@ -44,6 +46,7 @@ EvalMark.set_alpha(100)
 EvalArrow = pygame.image.load("res\\EvalArrow.png")
 
 WelcomeImg = pygame.image.load("res\\Welcome.png")
+Welcome2Img = pygame.image.load("res\\Welcome2.png")
 
 score = 0
 
@@ -115,6 +118,23 @@ class Beat(Value):
     def __init__(self, value):
         super().__init__(value)
         self.type = "Beat"
+
+
+class KeyboardInfo:
+    def __init__(self):
+        self.kStatus = [False, False, False, False, False, False, ]
+
+    def RespondEvent(self, event):
+        key = event.unicode.upper()
+        if key in KEY_MAP:
+            index = KEY_MAP.index(key)
+            if event.type == pygame.KEYDOWN:
+                self.kStatus[index] = True
+            elif event.type == pygame.KEYUP:
+                self.kStatus[index] = False
+
+    def GetPressedNum(self):
+        return self.kStatus.count(True)
 
 
 def ConvertToFloat(valueObject):

@@ -63,7 +63,6 @@ def json2Event(path):
             # else:
             #     C3EventDict.append({'time': time, 'event': 1})
 
-    print(tuple(col2EventDict.values()))
     return tuple(col2EventDict.values())
 
 

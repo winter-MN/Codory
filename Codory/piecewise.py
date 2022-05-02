@@ -17,13 +17,15 @@ class PosCalculator:
         self.stopBeat = stopBeat
         self.AddEvent(stopBeat, stopBeat, 0)
 
-        self.cacheName = "PosCache{}.txt"
+        self.cacheName = "cache/PosCache{}.txt"
         self.beat2posDict = {}
 
     def AddEvent(self, mode, startBeat, target):
         self.eventList.append((mode, startBeat, target))
 
     def Translate(self):
+        if not os.path.exists("cache"):
+            os.makedirs("cache")
         # 将eventList中的事件按照startBeat排序
         self.eventList.sort(key=lambda x: x[1])
 

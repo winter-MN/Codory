@@ -135,8 +135,8 @@ class EffectDrawer:
             self.hitList.pop(0)
 
         for time_, x, y, type_ in self.hitList:
-            p = (playTime - time_) / self.duration
-            p = - p * p + 2 * p  # 从0到1的二次曲线
+            _p = (playTime - time_) / self.duration
+            p = - _p * _p + 2 * _p  # 从0到1的二次曲线
             alpha = 255 - p * 255
             if "Tap" in type_:
                 # 绘制圆形
@@ -145,13 +145,37 @@ class EffectDrawer:
                     base.TapPerfect.set_alpha(alpha)
                     TapPerfect = pygame.transform.scale(base.TapPerfect, (r * 2, r * 2))
                     self.surface.blit(TapPerfect, (x + self.x - r, y + self.y - r))
-                    # pygame.draw.circle(self.surface, color, (x + self.x, y + self.y), r, 3)
+
+                elif "Good" in type_:
+                    r = 40 * p + 40  # 圆的半径
+                    base.TapGood.set_alpha(alpha)
+                    TapGood = pygame.transform.scale(base.TapGood, (r * 2, r * 2))
+                    self.surface.blit(TapGood, (x + self.x - r, y + self.y - r))
+
+                else:   # Bad & Miss
+                    base.TapFailed.set_alpha((255 - alpha)*(1-p))
+                    base.TapImage.set_alpha(alpha*(1-p))
+                    self.surface.blit(base.TapImage, (self.x + x - 40, self.y + y-40))
+                    self.surface.blit(base.TapFailed, (self.x + x - 40, self.y + y-40))
+
             elif "Drag" in type_:
                 if "Perfect" in type_:
                     r = 30 * p + 30  # 菱形的半径
                     base.DragPerfect.set_alpha(alpha)
                     DragPerfect = pygame.transform.scale(base.DragPerfect, (r * 2, r * 2))
                     self.surface.blit(DragPerfect, (x + self.x - r, y + self.y - r))
+
+                elif "Good" in type_:
+                    r = 30 * p + 30
+                    base.DragGood.set_alpha(alpha)
+                    DragGood = pygame.transform.scale(base.DragGood, (r * 2, r * 2))
+                    self.surface.blit(DragGood, (x + self.x - r, y + self.y - r))
+
+                else:   # Bad & Miss
+                    base.DragFailed.set_alpha((255 - alpha)*(1-p))
+                    base.DragImage.set_alpha(alpha*(1-p))
+                    self.surface.blit(base.DragImage, (self.x + x - 30, self.y + y-30))
+                    self.surface.blit(base.DragFailed, (self.x + x - 30, self.y + y-30))
 
 
 class NoteCanvas:
@@ -171,63 +195,50 @@ class NoteCanvas:
         track1Note = list(self.track1.GetNoteByTime(playTime))
         track2Note = list(self.track2.GetNoteByTime(playTime))
 
-        if (track1Note and track2Note and track1Note[0].hitTime < track2Note[0].hitTime) or (
-                track1Note and not track2Note):
-            # 下一个Note在track1打击
-            note = track1Note.pop(0)
-            alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
-            if note.type == "Tap":
-                base.TapMulti.set_alpha(alpha)
-                self.surface.blit(base.TapMulti,
-                                  (self.x + note.x - 40, self.y + note.y - 40)
-                                  )
-            else:  # Drag
-                base.DragMulti.set_alpha(alpha)
-                self.surface.blit(base.DragMulti,
-                                  (self.x + note.x - 30, self.y + note.y - 30)
-                                  )
-        elif (track1Note and track2Note and track1Note[0].hitTime > track2Note[0].hitTime) or (
-                track2Note and not track1Note):
-            # 下一个Note在track2打击
-            note = track2Note.pop(0)
-            alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
-            if note.type == "Tap":
-                base.TapMulti.set_alpha(alpha)
-                self.surface.blit(base.TapMulti,
-                                  (self.width + self.x - note.x - 40, self.y + note.y - 40)
-                                  )
-            else:  # Drag
-                base.DragMulti.set_alpha(alpha)
-                self.surface.blit(base.DragMulti,
-                                  (self.width + self.x - note.x - 30, self.y + note.y - 30)
-                                  )
+        # 标记下一个要被打击的note
+        notes = track1Note+track2Note
+        notes.sort(key=lambda x:x.hitTime)
+        # 找到下一个要被打击的Note
 
-        elif track1Note and track2Note and track1Note[0].hitTime == track2Note[0].hitTime:
-            note = track1Note.pop(0)
-            alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
-            if note.type == "Tap":
-                base.TapMulti.set_alpha(alpha)
-                self.surface.blit(base.TapMulti,
-                                  (self.x + note.x - 40, self.y + note.y - 40)
-                                  )
-            else:  # Drag
-                base.DragMulti.set_alpha(alpha)
-                self.surface.blit(base.DragMulti,
-                                  (self.x + note.x - 30, self.y + note.y - 30)
-                                  )
+        if notes:
+            hitTimeOfNextNote = notes[0].hitTime
+            nextNotesOfTrack1 = []      # 考虑到多押
+            nextNotesOfTrack2 = []      # 考虑到多押
 
-            note = track2Note.pop(0)
-            alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
-            if note.type == "Tap":
-                base.TapMulti.set_alpha(alpha)
-                self.surface.blit(base.TapMulti,
-                                  (self.width + self.x - note.x - 40, self.y + note.y - 40)
-                                  )
-            else:  # Drag
-                base.DragMulti.set_alpha(alpha)
-                self.surface.blit(base.DragMulti,
-                                  (self.width + self.x - note.x - 30, self.y + note.y - 30)
-                                  )
+            while notes and notes[0].hitTime == hitTimeOfNextNote:
+                note = notes.pop(0)
+                if note in track1Note:
+                    nextNotesOfTrack1.append(note)
+                    track1Note.remove(note)
+                else:
+                    nextNotesOfTrack2.append(note)
+                    track2Note.remove(note)
+
+            for note in nextNotesOfTrack1:
+                alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
+                if note.type == "Tap":
+                    base.TapMulti.set_alpha(alpha)
+                    self.surface.blit(base.TapMulti,
+                                      (self.x + note.x - 40, self.y + note.y - 40)
+                                      )
+                else:  # Drag
+                    base.DragMulti.set_alpha(alpha)
+                    self.surface.blit(base.DragMulti,
+                                      (self.x + note.x - 30, self.y + note.y - 30)
+                                      )
+
+            for note in nextNotesOfTrack2:
+                alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
+                if note.type == "Tap":
+                    base.TapMulti.set_alpha(alpha)
+                    self.surface.blit(base.TapMulti,
+                                      (self.width + self.x - note.x - 40, self.y + note.y - 40)
+                                      )
+                else:  # Drag
+                    base.DragMulti.set_alpha(alpha)
+                    self.surface.blit(base.DragMulti,
+                                      (self.width + self.x - note.x - 30, self.y + note.y - 30)
+                                      )
 
         for note in track1Note:
             alpha = 255 - 255 * (note.alphaTime - playTime) / (note.alphaTime - note.showTime)
@@ -320,10 +331,15 @@ class ScoreDrawer:
         # fixme: 考虑miss & bad
         if "Perfect" in hitType:
             self.perfectNum += 1
+            self.combo += 1
         elif "Good" in hitType:
             self.goodNum += 1
+            self.combo += 1
+        elif "Miss" in hitType:
+            self.combo = 0
+        else:   # Bad
+            self.combo = 0
         self.score = 1000000 * self.perfectNum / self.noteNum + 100000 * self.goodNum / self.noteNum * 0.5
-        self.combo += 1
 
     def Draw(self, playTime):
         score = str(int(self.score)).rjust(7, "0")
@@ -419,7 +435,7 @@ class EvaluationDrawer:
         thickness = 20
         y1 = base.SCREENHEIGHT - thickness * 2
         y2 = base.SCREENHEIGHT - thickness
-        self.surface.blit(base.EvalBg, (self.x + base.SCREENWIDTH / 2 - 400 - 5, self.y + y1 - thickness))
+        self.surface.blit(base.EvalBg, (self.x + base.SCREENWIDTH / 2 - 400, self.y + y1 - thickness))
         pygame.draw.polygon(self.surface, self.yellow,
                             [(self.x + base.SCREENWIDTH / 2 - 400, y1),
                              (self.x + base.SCREENWIDTH / 2 - 400, y2),

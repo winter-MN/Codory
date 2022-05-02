@@ -1,5 +1,5 @@
 """
-铺面游玩
+auto
 """
 
 import analyse
@@ -18,17 +18,17 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((base.SCREENWIDTH, base.SCREENHEIGHT))
 pygame.display.set_caption("Codory Demo 08")
 surface = pygame.Surface((base.SCREENWIDTH, base.SCREENHEIGHT), pygame.SRCALPHA).convert_alpha()
-pygame.mixer.music.load("res/Altale.ogg")
+pygame.mixer.music.load("res/altale/music.ogg")
 pygame.mixer.music.set_volume(0.5)
 
-background = pygame.image.load("res/altale.jpg").convert()
+background = pygame.image.load("res/altale/background.png").convert()
 background = pygame.transform.scale(background, (base.SCREENWIDTH, base.SCREENHEIGHT))
 background.set_alpha(100)
 
 # EffectTrack1 = widget.EffectTrack()
 # EffectTrack2 = widget.EffectTrack()
 
-Tracks = analyse.json2Event(r"res\altaleEZ.mc")
+Tracks = analyse.json2Event("res/altale/beatmap.mc")
 
 # -------------------------------------------------
 
@@ -142,7 +142,7 @@ EvaluationDrawer = widget.EvaluationDrawer(surface,
                                            0,
                                            Track1, Track2)
 
-welcomed = True
+welcomed = False
 inited = False
 clock = pygame.time.Clock()
 startTime = time.time()
@@ -165,54 +165,63 @@ while True:
         elif 3 < p < 4:
             base.WelcomeImg.set_alpha(int((4 - p) * 255))
             surface.blit(base.WelcomeImg, (0, 0))
-        else:
+        elif 1 <= p <= 3:
             base.WelcomeImg.set_alpha(255)
             surface.blit(base.WelcomeImg, (0, 0))
-        if p > 4:
+        elif 4 < p < 5:
+            base.Welcome2Img.set_alpha(int((p-4) * 255))
+            surface.blit(base.Welcome2Img, (0, 0))
+        elif 7 < p < 8:
+            base.Welcome2Img.set_alpha(int((4 - (p-4)) * 255))
+            surface.blit(base.Welcome2Img, (0, 0))
+        else:
+            base.Welcome2Img.set_alpha(255)
+            surface.blit(base.Welcome2Img, (0, 0))
+        if p > 8:
             welcomed = True
         screen.blit(surface, (0, 0))
         pygame.display.flip()
         continue
 
     clock.tick(120)
-    beat = (time.time() - startTime)
-    # print(beat)
+    playTime = (time.time() - startTime)
+    # print(playTime)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit(0)
 
-    if beat >= 300:
+    if playTime >= 300:
         continue
     screen.fill((0, 0, 0))
     surface.fill((0, 0, 0, 255))
     surface.blit(background, (0, 0))
-    JudgeLineCanvas.Draw(beat)
+    JudgeLineCanvas.Draw(playTime)
     # ---------------------------------------------
-    EffectTrack.Draw(beat)
-    EffectDrawer.Draw(beat)
-    ScoreDrawer.Draw(beat)
-    SeparatorLine.Draw(beat)
-    EvaluationDrawer.Draw(beat)
+    EffectTrack.Draw(playTime)
+    EffectDrawer.Draw(playTime)
+    ScoreDrawer.Draw(playTime)
+    SeparatorLine.Draw(playTime)
+    EvaluationDrawer.Draw(playTime)
     # ---------------------------------------------
 
-    while Track1.noteList and Track1.noteList[0].hitTime < beat:
+    while Track1.noteList and Track1.noteList[0].hitTime < playTime:
         x = NoteCanvas.x + Track1.GetPosByTime(Track1.noteList[0].hitTime) % base.NOTE_CANVAS_WIDTH
         EffectTrack.AddHit(x, 1, Track1.noteList[0].type)
-        EffectDrawer.AddHit(beat, x, Track1.noteList[0].y, f"{Track1.noteList[0].type}Perfect")
+        EffectDrawer.AddHit(playTime, x, Track1.noteList[0].y, f"{Track1.noteList[0].type}Perfect")
         ScoreDrawer.AddHit(f"{Track1.noteList[0].type}Perfect")
         if Track1.noteList and Track1.noteList[0].type == "Tap":
-            EvaluationDrawer.AddEvaluation(random.uniform(-0.02, 0.02), beat)
+            EvaluationDrawer.AddEvaluation(playTime - Track1.noteList[0].hitTime, playTime)
         Track1.noteList.pop(0)
 
-    while Track2.noteList and Track2.noteList[0].hitTime < beat:
+    while Track2.noteList and Track2.noteList[0].hitTime < playTime:
         x = base.SCREENWIDTH - NoteCanvas.x - Track2.GetPosByTime(Track2.noteList[0].hitTime) % base.NOTE_CANVAS_WIDTH
         EffectTrack.AddHit(x, 2, Track2.noteList[0].type)
-        EffectDrawer.AddHit(beat, x, Track2.noteList[0].y, f"{Track2.noteList[0].type}Perfect")
+        EffectDrawer.AddHit(playTime, x, Track2.noteList[0].y, f"{Track2.noteList[0].type}Perfect")
         ScoreDrawer.AddHit(f"{Track2.noteList[0].type}Perfect")
         if Track2.noteList and Track2.noteList[0].type == "Tap":
-            EvaluationDrawer.AddEvaluation(random.uniform(-0.02, 0.02), beat)
+            EvaluationDrawer.AddEvaluation(playTime - Track2.noteList[0].hitTime, playTime)
         Track2.noteList.pop(0)
     # print(Track2.noteList)
-    NoteCanvas.Draw(beat)
+    NoteCanvas.Draw(playTime)
     screen.blit(surface, (0, 0))
     pygame.display.flip()
